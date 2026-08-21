@@ -90,7 +90,7 @@ DROP TABLE IF EXISTS raw.products;
 
 SELECT '=== Creating Products Table ===' AS info;
 CREATE TABLE raw.products (
-    products_id                     VARCHAR,
+    product_id                     VARCHAR,
     product_category_name           VARCHAR,
     product_name_lenght             BIGINT,
     product_description_lenght      BIGINT,
@@ -118,7 +118,7 @@ DROP TABLE IF EXISTS raw.product_category_translation;
 SELECT '=== Creating Product Category Translation Table ===' AS info;
 CREATE TABLE raw.product_category_translation (
     product_category_name                   VARCHAR,
-    product_category_name_translation       VARCHAR
+    product_category_name_english           VARCHAR
 );
 
 -- Validate Table Creation 
@@ -133,3 +133,6 @@ ORDER BY table_name;
 -- Inspect One Table
 SELECT 'Inspecting One Table' AS info;
 DESCRIBE raw.orders;
+
+SELECT '=== Inspecting Customers Table ===' AS info;
+DESCRIBE raw.customers;

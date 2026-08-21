@@ -19,3 +19,5 @@ SELECT
 FROM information_schema.schemata
 WHERE schema_name IN ('raw', 'warehouse', 'marts')
 ORDER BY schema_name;
+
+

@@ -138,7 +138,3 @@ FROM raw.orders
 LIMIT 5;
 
 
-
-
-
-

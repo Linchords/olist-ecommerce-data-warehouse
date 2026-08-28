@@ -59,3 +59,80 @@ GROUP BY customer_unique_id
 HAVING COUNT(DISTINCT customer_id) > 1
 ORDER BY customer_id_count DESC
 LIMIT 10;
+
+
+-- =========================================================
+-- LOAD PRODUCT DIMENSION
+-- =========================================================
+SELECT '=== Loading Dim Products Table ===' AS info;
+INSERT INTO warehouse.dim_product (
+    product_key,
+    product_id,
+    product_category_name,
+    product_category_name_english,
+    product_name_length,
+    product_description_length,
+    product_photos_qty,
+    product_weight_g,
+    product_length_cm,
+    product_height_cm,
+    product_width_cm
+)
+SELECT 
+    ROW_NUMBER() OVER(
+        ORDER BY product_id
+    ) AS product_key,
+
+    p.product_id,
+    p.product_category_name,
+    pct.product_category_name_english,
+    p.product_name_lenght AS product_name_length,
+    p.product_description_lenght AS product_description_length,
+    p.product_photos_qty,
+    p.product_weight_g,
+    p.product_length_cm,
+    p.product_height_cm,
+    p.product_width_cm
+
+FROM raw.products p
+LEFT JOIN raw.product_category_translation pct 
+    ON p.product_category_name = pct.product_category_name;
+
+
+-- Vefify product dimension table 
+SELECT '=== Previewing Few Rows In Product Dimension === ' AS info;
+SELECT *
+FROM warehouse.dim_product
+LIMIT 10;
+
+
+-- Compare Row counts dim_products & raw.products
+SELECT '=== Checking Raw Products Count ===' AS info;
+SELECT 
+    COUNT(*) AS total_raw_products
+FROM raw.products;
+
+SELECT '=== Checking Warehouse Products Count ===' AS info;
+SELECT 
+    COUNT(*) AS total_warehouse_products
+FROM warehouse.dim_product;
+
+-- Checking Missing Product Category Name 
+SELECT '=== Checking Missing Product Category Name Count ===' AS info;
+SELECT 
+    COUNT(*) AS product_category_without_translation
+FROM warehouse.dim_product
+WHERE product_category_name_english IS NULL;
+
+
+-- Checking Few Missing Rows
+SELECT '=== Checking Missing Product Category Name Count First 10 rows ===' AS info;
+SELECT
+    product_id,
+    product_category_name,
+    product_category_name_english
+FROM warehouse.dim_product
+WHERE product_category_name_english IS NULL 
+LIMIT 10;
+
+

@@ -136,3 +136,47 @@ WHERE product_category_name_english IS NULL
 LIMIT 10;
 
 
+SELECT '=== Loading Dim Sellers Table ===' AS info;
+INSERT INTO warehouse.dim_seller (
+    seller_key,
+    seller_id,
+    seller_zip_code_prefix,
+    seller_city,
+    seller_state
+)
+SELECT 
+    ROW_NUMBER() OVER(
+        ORDER BY seller_id
+    ) AS seller_key,
+
+    seller_id,
+    seller_zip_code_prefix,
+    seller_city,
+    seller_state
+FROM raw.sellers;
+
+-- Checking First 10 rows of the Dim_Sellers Table
+SELECT '=== Checking Dim Sellers Table Rows ===' AS info;
+SELECT *
+FROM warehouse.dim_seller
+LIMIT 10;
+
+
+-- Checking if table rows match 
+SELECT '=== Comparing Dim Sellers With Raw Sellers ===' AS info;
+SELECT
+    COUNT(*) AS total_raw_sellers_count
+FROM raw.sellers;
+
+SELECT 
+    COUNT(*) AS total_dim_seller_count
+FROM warehouse.dim_seller;
+
+-- Checking Uniqueness 
+SELECT '=== Checking Unique Values ===' AS info;
+SELECT 
+    seller_key,
+    COUNT(*) 
+FROM warehouse.dim_seller
+GROUP BY seller_key
+HAVING COUNT(*) > 1;

@@ -38,3 +38,20 @@ CREATE TABLE warehouse.dim_product (
     product_height_cm               INTEGER,
     product_width_cm                INTEGER
 );
+
+
+-- =========================================================
+-- SELLER DIMENSION
+-- Grain: One row per seller_id
+-- =========================================================
+
+DROP TABLE IF EXISTS warehouse.dim_seller;
+
+SELECT '=== Creating Dim Seller Table ===' AS info;
+CREATE TABLE warehouse.dim_seller (
+    seller_key                      BIGINT              PRIMARY KEY,
+    seller_id                       VARCHAR,
+    seller_zip_code_prefix          INTEGER,
+    seller_city                     VARCHAR,
+    seller_state                    VARCHAR                  
+);

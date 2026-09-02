@@ -136,6 +136,10 @@ WHERE product_category_name_english IS NULL
 LIMIT 10;
 
 
+-- =========================================================
+-- LOAD SELLER DIMENSION
+-- =========================================================
+
 SELECT '=== Loading Dim Sellers Table ===' AS info;
 INSERT INTO warehouse.dim_seller (
     seller_key,
@@ -180,3 +184,92 @@ SELECT
 FROM warehouse.dim_seller
 GROUP BY seller_key
 HAVING COUNT(*) > 1;
+
+-- =========================================================
+-- LOAD DATE DIMENSION
+-- =========================================================
+
+SELECT '=== Loading Dim Date Table ===' AS info;
+INSERT INTO warehouse.dim_date (
+    date_key,
+    full_date,
+    year,
+    quarter,
+    month,
+    month_name,
+    day,
+    day_name,
+    is_weekend
+)
+
+WITH date_range AS (
+    SELECT 
+        MIN(CAST(order_purchase_timestamp AS DATE)) AS min_date,
+        MAX(CAST(order_purchase_timestamp AS DATE)) AS max_date
+    FROM raw.orders
+),
+
+calendar AS (
+    SELECT
+        CAST(generated_date AS DATE) AS full_date
+    FROM date_range,
+    generate_series(
+        min_date,
+        max_date,
+        INTERVAL 1 DAY
+    ) AS t(generated_date)
+)
+
+SELECT
+    CAST(
+        STRFTIME(full_date, '%Y%m%d')
+        AS INTEGER
+    ) AS date_key,
+
+    full_date,
+    
+    EXTRACT(YEAR FROM full_date) AS year,
+
+    EXTRACT(QUARTER FROM full_date) AS quarter,
+
+    EXTRACT(MONTH FROM full_date) AS month,
+
+    STRFTIME(full_date, '%B') AS month_name,
+
+    EXTRACT(DAY FROM full_date) AS day,
+
+    STRFTIME(full_date, '%A') AS day_name,
+
+    CASE
+        WHEN STRFTIME(full_date, '%A') IN ('Saturday', 'Sunday')
+        THEN TRUE
+        ELSE FALSE 
+    END AS is_weekend
+
+FROM calendar;
+
+-- VERIFY DIM DATE
+SELECT '=== Checking Rows In Dim Date ===' AS info;
+SELECT *
+FROM warehouse.dim_date
+ORDER BY full_date
+LIMIT 10;
+
+-- CHECK THE RANGE
+SELECT '=== Checking first day, last day, and total rows in dim date table ===' AS info;
+SELECT 
+    MIN(full_date) AS first_date,
+    MAX(full_date) AS last_date,
+    COUNT(*) AS number_of_days
+FROM warehouse.dim_date; 
+
+-- CHECK WEEKENDS 
+SELECT '=== Checking Weekends Days ===' AS info;
+SELECT *
+FROM warehouse.dim_date
+WHERE is_weekend = TRUE
+LIMIT 10;
+
+
+
+

@@ -55,3 +55,24 @@ CREATE TABLE warehouse.dim_seller (
     seller_city                     VARCHAR,
     seller_state                    VARCHAR                  
 );
+
+
+-- =========================================================
+-- DATE DIMENSION
+-- Grain: One row per calendar date
+-- ========================================================
+
+DROP TABLE IF EXISTS warehouse.dim_date;
+
+SELECT '=== Creating Dim Date Table ===' AS info;
+CREATE TABLE warehouse.dim_date (
+    date_key        INTEGER         PRIMARY KEY,
+    full_date       DATE,
+    year            INTEGER,
+    quarter         INTEGER,
+    month           INTEGER,
+    month_name      VARCHAR,
+    day             INTEGER,
+    day_name        VARCHAR,
+    is_weekend      BOOLEAN
+);

@@ -62,3 +62,33 @@ CREATE TABLE warehouse.fact_payments (
 ); 
 
 
+-- =========================================================
+-- REVIEWS FACT TABLE
+-- Grain: One row per source review record
+-- =========================================================
+
+DROP TABLE IF EXISTS warehouse.fact_reviews;
+
+SELECT '=== Creating Fact Reviews Table ===' AS info;
+CREATE TABLE warehouse.fact_reviews (
+    review_key                  BIGINT          PRIMARY KEY,
+    review_id                   VARCHAR,
+    order_id                    VARCHAR,
+    customer_key                BIGINT,
+    date_key                    INTEGER,
+    review_score                INTEGER,
+    review_comment_title        VARCHAR,
+    review_comment_message      VARCHAR,
+    review_creation_date        TIMESTAMP,
+    review_answer_timestamp     TIMESTAMP,
+
+    FOREIGN KEY (customer_key)
+        REFERENCES warehouse.dim_customer(customer_key),
+    
+    FOREIGN KEY (date_key)
+        REFERENCES warehouse.dim_date(date_key)
+);
+
+
+
+

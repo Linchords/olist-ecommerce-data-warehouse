@@ -124,6 +124,7 @@ FROM raw.order_payments;
 SELECT COUNT(*) AS fact_payments_count
 FROM warehouse.fact_payments;
 
+SELECT '=== Analytical Query ===' AS info;
 SELECT
     payment_type,
     COUNT(*) AS payment_transactions,
@@ -131,3 +132,89 @@ SELECT
 FROM warehouse.fact_payments
 GROUP BY payment_type
 ORDER BY total_payment_value DESC;
+
+
+-- =========================================================
+-- LOAD REVIEWS FACT TABLE
+-- =========================================================
+
+SELECT '=== Loading Reviews Fact Table ===' AS info;
+INSERT INTO warehouse.fact_reviews (
+    review_key,
+    review_id,
+    order_id,
+    customer_key,
+    date_key,
+    review_score,
+    review_comment_title,
+    review_comment_message,
+    review_creation_date,
+    review_answer_timestamp
+)
+
+SELECT
+    ROW_NUMBER() OVER (
+        ORDER BY
+            r.order_id,
+            r.review_id,
+            r.review_creation_date,
+            r.review_answer_timestamp
+    ) AS review_key,
+
+    r.review_id,
+    r.order_id,
+
+    dc.customer_key,
+    dd.date_key,
+
+    r.review_score,
+    r.review_comment_title,
+    r.review_comment_message,
+    r.review_creation_date,
+    r.review_answer_timestamp
+
+FROM raw.order_reviews r
+
+INNER JOIN raw.orders o
+    ON r.order_id = o.order_id
+
+INNER JOIN warehouse.dim_customer dc
+    ON o.customer_id = dc.customer_id
+
+INNER JOIN warehouse.dim_date dd
+    ON CAST(r.review_creation_date AS DATE) = dd.full_date;
+
+
+-- Checking Unique Values
+SELECT '=== Checking Unique Keys ===' AS info;
+SELECT
+    review_key,
+    COUNT(*) AS occurrences
+FROM warehouse.fact_reviews
+GROUP BY review_key
+HAVING COUNT(*) > 1;
+
+-- Verify Count
+SELECT '=== Verifying Counts For Fact Reviews ===' AS info;
+SELECT *
+FROM warehouse.fact_reviews
+LIMIT 10;
+
+-- Compare Counts
+SELECT '=== Comparing Counts ===' AS info;
+SELECT 
+    COUNT(*) 
+FROM raw.order_reviews;
+
+SELECT 
+    COUNT(*)
+FROM warehouse.fact_reviews;
+
+-- Test Analytical Query
+SELECT '=== Testing Analytical Query ===' AS info;
+SELECT
+    review_score,
+    COUNT(*) AS review_count
+FROM warehouse.fact_reviews
+GROUP BY review_score
+ORDER by review_score;

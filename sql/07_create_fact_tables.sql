@@ -33,3 +33,32 @@ CREATE TABLE warehouse.fact_sales (
     FOREIGN KEY (date_key)
         REFERENCES warehouse.dim_date(date_key)
 );
+
+-- =========================================================
+-- PAYMENTS FACT TABLE
+-- Grain: One row per payment transaction within an order
+-- =========================================================
+
+DROP TABLE IF EXISTS warehouse.fact_payments;
+
+SELECT '=== Creating Fact Payments Table ===' AS info;
+CREATE TABLE warehouse.fact_payments (
+    order_id                VARCHAR,
+    payment_sequential      INTEGER,
+    customer_key            BIGINT,
+    date_key                INTEGER,
+    payment_type            VARCHAR,
+    payment_installments    INTEGER,
+    payment_value           DOUBLE,
+    order_status            VARCHAR,
+
+    PRIMARY KEY (order_id, payment_sequential),
+
+    FOREIGN KEY (customer_key)
+        REFERENCES warehouse.dim_customer(customer_key),
+    
+    FOREIGN KEY (date_key)
+        REFERENCES warehouse.dim_date(date_key)
+); 
+
+

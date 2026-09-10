@@ -142,3 +142,6 @@ LEFT JOIN warehouse.dim_date d
     ON CAST(r.review_creation_date AS DATE) = d.full_date
 WHERE r.review_creation_date IS NOT NULL
   AND d.date_key IS NULL;
+
+
+  

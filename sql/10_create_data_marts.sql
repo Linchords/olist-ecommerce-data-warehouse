@@ -3,7 +3,7 @@
 -- Purpose:
 -- Provides monthly sales KPIs for reporting and dashboards
 -- =========================================================
-
+SELECT '=== Creating Monthly Sales Mart ===' AS info;
 CREATE OR REPLACE VIEW marts.vw_monthly_sales AS 
 
 SELECT 
@@ -29,7 +29,9 @@ GROUP BY
     d.month,
     d.month_name;
 
+
 -- TEST 
+SELECT '=== Testing Monthly sales mart ===' AS info;
 SELECT *
 FROM marts.vw_monthly_sales
 ORDER BY year, month
@@ -53,6 +55,7 @@ LIMIT 10;
 -- Summarizes product and category sales performance
 -- =========================================================
 
+SELECT '=== Creating Product Performance Mart ===' AS info;
 CREATE OR REPLACE VIEW marts.vw_product_performance AS 
 
 SELECT 
@@ -82,6 +85,7 @@ GROUP BY
     dp.product_category_name_english;
 
 -- Top Products by Sales
+SELECT '=== Testing Product Performance Mart ===' AS info;
 SELECT 
     product_id,
     product_category_name_english,
@@ -98,3 +102,81 @@ FROM marts.vw_product_performance
 GROUP BY product_category_name_english
 ORDER BY category_sales DESC
 LIMIT 10;
+
+-- ===========================u==============================
+-- CUSTOMER SUMMARY MART
+-- Purpose:
+-- Summarizes customer purchasing behavior
+-- Grain: One row per unique customer
+-- =========================================================
+
+SELECT '=== Creating Customer Summary Mart ===' AS info;
+CREATE OR REPLACE VIEW marts.vw_customer_summary AS
+
+WITH order_totals AS (
+
+SELECT 
+    dc.customer_unique_id,
+    fs.order_id,
+
+    SUM(fs.price) AS product_sales,
+    SUM(fs.freight_value) AS freight_value,
+    SUM(fs.price + fs.freight_value) AS order_value,
+
+    COUNT(*) AS items_in_order
+
+FROM warehouse.fact_sales fs 
+
+INNER JOIN warehouse.dim_customer dc
+    ON fs.customer_key = dc.customer_key
+
+GROUP BY 
+    dc.customer_unique_id,
+    fs.order_id
+)
+
+SELECT 
+
+    customer_unique_id,
+
+    COUNT(*) AS total_orders,
+
+    SUM(items_in_order) AS total_items_purchased,
+
+    SUM(product_sales) AS total_product_sales,
+
+    SUM(freight_value) AS total_freight_paid,
+
+    SUM(order_value) AS total_spent,
+
+    AVG(order_value) AS average_order_value
+FROM order_totals
+GROUP BY customer_unique_id;
+
+
+-- Test Customer Mart
+SELECT '=== Testing Customer Summary Mart ===' AS info;
+SELECT *
+FROM marts.vw_customer_summary
+LIMIT 10;
+
+-- Top Customers by Spending
+SELECT '=== Top Customers By Spending ===' AS info;
+SELECT 
+    customer_unique_id,
+    total_orders,
+    total_spent
+FROM marts.vw_customer_summary
+ORDER BY total_spent DESC
+LIMIT 10;
+
+-- Find Repeat Customers
+SELECT '=== Repeat Customers ===' AS info;
+SELECT 
+    customer_unique_id,
+    total_orders,
+    total_spent
+FROM marts.vw_customer_summary
+WHERE total_orders > 1
+ORDER BY total_orders DESC, total_spent DESC
+LIMIT 20;

@@ -39,7 +39,7 @@ LIMIT 20;
 
 -- Business Question Query
 -- Question: Which month generated the highest product sales
-
+SELECT '=== Business Question Query ===' AS info;
 SELECT 
     year,
     month_name,
@@ -95,6 +95,7 @@ ORDER BY total_product_sales DESC
 LIMIT 10;
 
 -- Top Categories
+SELECT '=== Top Product Categories ===' AS info;
 SELECT 
     product_category_name_english,
     SUM(total_product_sales) AS category_sales
@@ -103,7 +104,7 @@ GROUP BY product_category_name_english
 ORDER BY category_sales DESC
 LIMIT 10;
 
--- ===========================u==============================
+-- =========================================================
 -- CUSTOMER SUMMARY MART
 -- Purpose:
 -- Summarizes customer purchasing behavior
@@ -180,3 +181,64 @@ FROM marts.vw_customer_summary
 WHERE total_orders > 1
 ORDER BY total_orders DESC, total_spent DESC
 LIMIT 20;
+
+
+-- =========================================================
+-- SELLER PERFORMANCE MART
+-- Purpose:
+-- Summarizes seller sales performance
+-- Grain: One row per seller
+-- =========================================================
+
+SELECT '=== Creating Seller Performance Mart ===' AS info;
+CREATE OR REPLACE VIEW marts.vw_seller_performance AS 
+
+SELECT 
+    ds.seller_key,
+    ds.seller_id,
+    ds.seller_city,
+    ds.seller_state,
+
+    COUNT(*) AS total_items_sold,
+
+    COUNT(DISTINCT fs.order_id) AS total_orders,
+
+    SUM(fs.price) AS total_product_sales,
+
+    SUM(fs.freight_value) AS total_freight_value,
+
+    SUM(fs.price + fs.freight_value) AS total_revenue,
+
+    AVG(fs.price) AS average_item_price
+
+FROM warehouse.fact_sales fs
+
+INNER JOIN warehouse.dim_seller ds 
+    ON fs.seller_key = ds.seller_key
+
+GROUP BY 
+    ds.seller_key,
+    ds.seller_id,
+    ds.seller_city,
+    ds.seller_state;
+
+-- TEST
+SELECT '=== Top Sellers By Revenue ===' AS info;
+SELECT 
+    seller_id,
+    seller_city,
+    seller_state,
+    total_orders,
+    total_revenue
+FROM marts.vw_seller_performance
+ORDER BY total_revenue DESC
+LIMIT 10;
+
+-- Top states by seller revenue
+SELECT '=== Top States By Seller Revenue ===' AS info;
+SELECT 
+    seller_state,
+    SUM(total_revenue) AS state_revenue
+FROM marts.vw_seller_performance
+GROUP BY seller_state
+ORDER BY state_revenue DESC;

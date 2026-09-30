@@ -242,3 +242,81 @@ SELECT
 FROM marts.vw_seller_performance
 GROUP BY seller_state
 ORDER BY state_revenue DESC;
+
+
+-- =========================================================
+-- REVIEW PERFORMANCE MART
+-- Purpose:
+-- Summarizes review scores by product and seller
+-- Grain: One row per product-seller combination
+-- =========================================================
+
+SELECT '=== Creating Review Performance Mart ===' AS info;
+CREATE OR REPLACE VIEW marts.vw_review_performance AS 
+SELECT
+    dp.product_key,
+    dp.product_id,
+    dp.product_category_name_english,
+
+    ds.seller_key,
+    ds.seller_id,
+    ds.seller_city,
+    ds.seller_state,
+
+    COUNT(DISTINCT fr.review_id) AS total_reviews,
+
+    AVG(fr.review_score) AS average_review_score,
+
+    COUNT(*) FILTER (
+        WHERE fr.review_score >= 4
+    ) AS positive_reviews,
+
+    COUNT(*) FILTER (
+        WHERE fr.review_score <= 2
+    ) AS negative_reviews,
+
+FROM warehouse.fact_reviews fr
+
+INNER JOIN warehouse.fact_sales fs 
+    ON fr.order_id = fs.order_id
+
+INNER JOIN warehouse.dim_product dp 
+    ON fs.product_key = dp.product_key
+
+INNER JOIN warehouse.dim_seller ds
+    ON fs.seller_key = ds.seller_key
+
+GROUP BY 
+    dp.product_key,
+    dp.product_id,
+    dp.product_category_name_english,
+    ds.seller_key,
+    ds.seller_id,
+    ds.seller_city,
+    ds.seller_state;
+
+-- Products with highest average score
+SELECT '=== Products With Highest Average Score ===' AS info;
+SELECT 
+    product_id,
+    product_category_name_english,
+    total_reviews,
+    average_review_score
+FROM marts.vw_review_performance
+WHERE total_reviews >= 5
+ORDER BY average_review_score DESC
+LIMIT 10;
+
+-- Sellers with poor average reviews
+SELECT '=== Sellers With Poor Average Review ===' AS info;
+SELECT 
+    seller_id,
+    seller_state,
+    total_reviews,
+    average_review_score,
+    negative_reviews
+FROM marts.vw_review_performance
+WHERE total_reviews >= 10
+ORDER BY average_review_score ASC
+LIMIT 10;
+

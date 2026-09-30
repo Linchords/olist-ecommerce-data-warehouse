@@ -218,3 +218,67 @@ SELECT
 FROM warehouse.fact_reviews
 GROUP BY review_score
 ORDER by review_score;
+
+
+-- =========================================================
+-- LOAD DELIVERY FACT TABLE
+-- =========================================================
+
+SELECT '=== Loading Delivery Fact Table ===' AS info;
+INSERT INTO warehouse.fact_delivery (
+    order_id,
+    customer_key,
+    product_date_key,
+    order_status,
+    order_purchase_timestamp,
+    order_approved_at,
+    order_delivered_carrier_date,
+    order_delivered_customer_date,
+    order_estimated_delivery_date
+)
+
+SELECT 
+    o.order_id,
+
+    dc.customer_key,
+
+    dd.date_key,
+
+    o.order_status,
+
+    o.order_purchase_timestamp,
+    o.order_approved_at,
+    o.order_delivered_carrier_date,
+    o.order_delivered_customer_date,
+    o.order_estimated_delivery_date
+
+
+
+FROM raw.orders o
+
+INNER JOIN warehouse.dim_customer dc 
+    ON o.customer_id = dc.customer_id 
+
+INNER JOIN warehouse.dim_date dd
+    ON CAST(o.order_purchase_timestamp AS DATE) = dd.full_date;
+
+
+-- Verify
+SELECT '=== Verifying Fact Delivery Table Creation ===' AS info;
+SELECT *
+FROM warehouse.fact_delivery
+LIMIT 10;
+
+SELECT '=== Comparing Fact Delivery Table To Raw Orders ===' AS info;
+SELECT COUNT(*) AS total_raw_orders
+FROM raw.orders;
+
+SELECT COUNT(*) AS total_warehouse_delivery
+FROM warehouse.fact_delivery;
+
+SELECT 
+    order_status,
+    COUNT(*) AS order_count
+FROM warehouse.fact_delivery
+GROUP BY order_status
+ORDER BY order_count DESC;

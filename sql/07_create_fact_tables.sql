@@ -90,5 +90,37 @@ CREATE TABLE warehouse.fact_reviews (
 );
 
 
+-- =========================================================
+-- DELIVERY FACT TABLE
+-- Grain: One row per order
+-- =========================================================
+
+DROP TABLE IF EXISTS warehouse.fact_delivery;
+
+SELECT '=== Creating Fact Delivery Table ===' AS info;
+CREATE TABLE warehouse.fact_delivery (
+    order_id                            VARCHAR         PRIMARY KEY,
+
+    customer_key                        BIGINT,
+    product_date_key                    INTEGER,
+    
+    order_status                        VARCHAR,
+
+    order_purchase_timestamp            TIMESTAMP,
+    order_approved_at                   TIMESTAMP,
+    order_delivered_carrier_date        TIMESTAMP,
+    order_delivered_customer_date       TIMESTAMP,
+    order_estimated_delivery_date       TIMESTAMP,
+
+    FOREIGN KEY (customer_key)
+        REFERENCES warehouse.dim_customer(customer_key),
+
+    FOREIGN KEY (product_date_key)
+        REFERENCES warehouse.dim_date(date_key)
+);
+
+
+
+
 
 

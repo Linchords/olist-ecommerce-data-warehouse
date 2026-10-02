@@ -322,3 +322,87 @@ LIMIT 10;
 
 
 
+-- =========================================================
+-- DELIVERY PERFORMANCE MART
+-- Purpose:
+-- Calculates delivery speed and lateness metrics
+-- Grain: One row per order
+-- =========================================================
+SELECT '=== Creating Delivery Performance Mart ===' AS info;
+CREATE OR REPLACE VIEW marts.vw_delivery_performance AS 
+
+SELECT 
+    fd.order_id,
+    fd.customer_key,
+    fd.purchase_date_key,
+    fd.order_status,
+
+    fd.order_purchase_timestamp,
+    fd.order_delivered_customer_date,
+    fd.order_estimated_delivery_date,
+
+    -- Number of days from purchase to actual delivery 
+    DATE_DIFF (
+        'day',
+        fd.order_purchase_timestamp,
+        fd.order_delivered_customer_date
+    ) AS actual_delivery_days,
+
+    -- Postive number = delivered late 
+    -- Negative number = delivered early 
+    DATE_DIFF(
+        'day',
+        fd.order_estimated_delivery_date,
+        fd.order_delivered_customer_date
+    ) AS delivery_delay_days,
+
+
+    CASE
+        WHEN fd.order_delivered_customer_date IS NULL 
+            THEN NULL 
+        
+        WHEN fd.order_delivered_customer_date
+            > fd.order_estimated_delivery_date
+            THEN TRUE
+
+        ELSE FALSE 
+    END AS is_late_delivery
+
+
+FROM warehouse.fact_delivery fd;
+
+
+-- Test
+SELECT '=== Delivery Performance Row Count ===' AS info;
+SELECT *
+FROM marts.vw_delivery_performance
+LIMIT 10;
+
+-- Count Late Deliveries 
+SELECT '=== Counting Late Deliveries ===' AS info;
+SELECT 
+    is_late_delivery,
+    COUNT(*) AS order_count
+FROM marts.vw_delivery_performance 
+-- WHERE is_late_delivery = TRUE AND is_late_delivery IS NOT NULL 
+GROUP BY is_late_delivery
+LIMIT 10;
+
+
+-- Average Delivery Time 
+SELECT '=== Average Delivery Time ===' AS info;
+SELECT 
+    AVG(actual_delivery_days) AS avg_delivery_days
+FROM marts.vw_delivery_performance 
+WHERE actual_delivery_days IS NOT NULL;
+
+-- Most Delayed Orders 
+SELECT '=== Most Delayed Orders ===' AS info;
+SELECT 
+    order_id,
+    actual_delivery_days,
+    delivery_delay_days
+FROM marts.vw_delivery_performance
+WHERE is_late_delivery = TRUE
+ORDER BY delivery_delay_days DESC
+LIMIT 10;

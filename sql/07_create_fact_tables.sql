@@ -102,7 +102,7 @@ CREATE TABLE warehouse.fact_delivery (
     order_id                            VARCHAR         PRIMARY KEY,
 
     customer_key                        BIGINT,
-    product_date_key                    INTEGER,
+    purchase_date_key                   INTEGER,
     
     order_status                        VARCHAR,
 
@@ -115,12 +115,6 @@ CREATE TABLE warehouse.fact_delivery (
     FOREIGN KEY (customer_key)
         REFERENCES warehouse.dim_customer(customer_key),
 
-    FOREIGN KEY (product_date_key)
+    FOREIGN KEY (purchase_date_key)
         REFERENCES warehouse.dim_date(date_key)
 );
-
-
-
-
-
-

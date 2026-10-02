@@ -228,7 +228,7 @@ SELECT '=== Loading Delivery Fact Table ===' AS info;
 INSERT INTO warehouse.fact_delivery (
     order_id,
     customer_key,
-    product_date_key,
+    purchase_date_key,
     order_status,
     order_purchase_timestamp,
     order_approved_at,

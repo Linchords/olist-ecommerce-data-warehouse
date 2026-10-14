@@ -194,6 +194,8 @@ FROM warehouse.fact_reviews
 GROUP BY review_key
 HAVING COUNT(*) > 1;
 
+
+
 -- Verify Count
 SELECT '=== Verifying Counts For Fact Reviews ===' AS info;
 SELECT *

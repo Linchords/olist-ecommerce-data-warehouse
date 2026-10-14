@@ -263,7 +263,7 @@ SELECT
     ds.seller_city,
     ds.seller_state,
 
-    COUNT(DISTINCT fr.review_id) AS total_reviews,
+    COUNT(DISTINCT fr.review_key) AS total_reviews,
 
     AVG(fr.review_score) AS average_review_score,
 

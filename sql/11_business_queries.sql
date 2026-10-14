@@ -74,7 +74,7 @@ SELECT
     total_orders,
     total_spent
 FROM marts.vw_customer_summary
-WHERE total_oders > 1
+WHERE total_orders > 1
 ORDER BY total_orders DESC, total_spent DESC
 LIMIT 20;
 
@@ -165,3 +165,38 @@ FROM marts.vw_delivery_performance
 WHERE actual_delivery_days IS NOT NULL;
 
 
+SHOW ALL TABLES;
+
+SELECT COUNT(*) FROM raw.orders;
+SELECT COUNT(*) FROM warehouse.fact_sales;
+SELECT COUNT(*) FROM warehouse.fact_payments;
+SELECT COUNT(*) FROM warehouse.fact_reviews;
+SELECT COUNT(*) FROM warehouse.fact_delivery;
+
+SELECT *
+FROM marts.vw_monthly_sales
+LIMIT 5;
+
+SELECT *
+FROM marts.vw_customer_summary
+LIMIT 5;
+
+
+SELECT
+    review_id,
+    COUNT(*) AS rows_count,
+    COUNT(DISTINCT order_id) AS order_count
+FROM raw.order_reviews
+GROUP BY review_id
+HAVING COUNT(*) > 1
+ORDER BY rows_count DESC;
+
+SELECT
+    review_id,
+    order_id,
+    COUNT(*) AS occurrences
+FROM raw.order_reviews
+GROUP BY
+    review_id,
+    order_id
+HAVING COUNT(*) > 1;

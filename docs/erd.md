@@ -1,0 +1,87 @@
+# Olist E-Commerce Warehouse ERD
+
+```mermaid
+erDiagram
+
+    DIM_CUSTOMER {
+        BIGINT customer_key PK
+        VARCHAR customer_id
+        VARCHAR customer_unique_id
+        VARCHAR customer_city
+        VARCHAR customer_state
+    }
+
+    DIM_PRODUCT {
+        BIGINT product_key PK
+        VARCHAR product_id
+        VARCHAR product_category_name
+        VARCHAR product_category_name_english
+    }
+
+    DIM_SELLER {
+        BIGINT seller_key PK
+        VARCHAR seller_id
+        VARCHAR seller_city
+        VARCHAR seller_state
+    }
+
+    DIM_DATE {
+        INTEGER date_key PK
+        DATE full_date
+        INTEGER year
+        INTEGER quarter
+        INTEGER month
+        VARCHAR month_name
+    }
+
+    FACT_SALES {
+        VARCHAR order_id PK
+        INTEGER order_item_id PK
+        BIGINT customer_key FK
+        BIGINT product_key FK
+        BIGINT seller_key FK
+        INTEGER date_key FK
+        DOUBLE price
+        DOUBLE freight_value
+    }
+
+    FACT_PAYMENTS {
+        VARCHAR order_id PK
+        INTEGER payment_sequential PK
+        BIGINT customer_key FK
+        INTEGER date_key FK
+        VARCHAR payment_type
+        INTEGER payment_installments
+        DOUBLE payment_value
+    }
+
+    FACT_REVIEWS {
+        VARCHAR review_id PK
+        VARCHAR order_id
+        BIGINT customer_key FK
+        INTEGER date_key FK
+        INTEGER review_score
+    }
+
+    FACT_DELIVERY {
+        VARCHAR order_id PK
+        BIGINT customer_key FK
+        INTEGER purchase_date_key FK
+        VARCHAR order_status
+    }
+
+
+    DIM_CUSTOMER ||--o{ FACT_SALES : customer_key
+    DIM_PRODUCT  ||--o{ FACT_SALES : product_key
+    DIM_SELLER   ||--o{ FACT_SALES : seller_key
+    DIM_DATE     ||--o{ FACT_SALES : date_key
+
+    DIM_CUSTOMER ||--o{ FACT_PAYMENTS : customer_key
+    DIM_DATE     ||--o{ FACT_PAYMENTS : date_key
+
+    DIM_CUSTOMER ||--o{ FACT_REVIEWS : customer_key
+    DIM_DATE     ||--o{ FACT_REVIEWS : date_key
+
+    DIM_CUSTOMER ||--o{ FACT_DELIVERY : customer_key
+    DIM_DATE     ||--o{ FACT_DELIVERY : purchase_date_key
+```

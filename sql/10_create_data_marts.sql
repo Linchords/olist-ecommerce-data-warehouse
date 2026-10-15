@@ -24,10 +24,30 @@ FROM warehouse.fact_sales fs
 
 INNER JOIN warehouse.dim_date d
     ON fs.date_key = d.date_key
+
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     d.year,
     d.month,
     d.month_name;
+
+
+--TESR 
+SELECT 
+    SUM(total_orders) AS delivered_orders,
+    SUM(total_items_sold) AS delivered_items,
+
+
+    ROUND(
+        SUM(product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(freight_revenue), 2
+    ) AS delivered_freight_value
+
+FROM marts.vw_monthly_sales;
 
 
 -- TEST 
@@ -78,11 +98,40 @@ FROM warehouse.fact_sales fs
 INNER JOIN warehouse.dim_product dp 
     ON fs.product_key = dp.product_key
 
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     dp.product_key,
     dp.product_id,
     dp.product_category_name,
     dp.product_category_name_english;
+
+
+-- TEST 
+SELECT 
+    SUM(total_items_sold) AS delivered_items,
+
+    ROUND(
+        SUM(total_product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(total_freight_value), 2
+    ) AS delivered_freight_value
+
+FROM marts.vw_product_performance;
+
+-- PRODUCT RANKINGS
+SELECT '=== Product Rankings ===' AS info;
+SELECT 
+    product_id,
+    product_category_name_english,
+    total_items_sold,
+    total_product_sales
+FROM marts.vw_product_performance
+ORDER BY total_product_sales DESC
+LIMIT 10;
+
 
 -- Top Products by Sales
 SELECT '=== Testing Product Performance Mart ===' AS info;
@@ -131,6 +180,8 @@ FROM warehouse.fact_sales fs
 INNER JOIN warehouse.dim_customer dc
     ON fs.customer_key = dc.customer_key
 
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     dc.customer_unique_id,
     fs.order_id
@@ -154,6 +205,38 @@ SELECT
 FROM order_totals
 GROUP BY customer_unique_id;
 
+
+-- Customer Spendings
+SELECT '=== Customer Spending ===' AS info;
+SELECT
+    SUM(total_orders) AS delivered_orders,
+
+    SUM(total_items_purchased) AS delivered_items,
+
+    ROUND(
+        SUM(total_product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(total_freight_paid), 2
+    ) AS delivered_freight_value,
+
+    ROUND(
+        SUM(total_spent), 2
+    ) AS total_customer_spending
+
+FROM marts.vw_customer_summary;
+
+-- Highest Value Customer
+SELECT '=== Highest Value Customer ===' AS info;
+SELECT
+    customer_unique_id,
+    total_orders,
+    total_items_purchased,
+    ROUND(total_spent, 2) AS total_spent
+FROM marts.vw_customer_summary
+ORDER BY total_spent DESC
+LIMIT 10;
 
 -- Test Customer Mart
 SELECT '=== Testing Customer Summary Mart ===' AS info;
@@ -216,11 +299,43 @@ FROM warehouse.fact_sales fs
 INNER JOIN warehouse.dim_seller ds 
     ON fs.seller_key = ds.seller_key
 
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     ds.seller_key,
     ds.seller_id,
     ds.seller_city,
     ds.seller_state;
+
+
+-- Validate Seller Mart
+SELECT '=== Validate Seller Marts ===' AS info;
+SELECT
+    SUM(total_items_sold) AS delivered_items,
+
+    ROUND(
+        SUM(total_product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(total_freight_value), 2
+    ) AS delivered_freight_value
+
+FROM marts.vw_seller_performance;
+
+
+-- Top Performing Sellers 
+SELECT '=== Top performing sellers ===' AS info;
+SELECT
+    seller_id,
+    seller_city,
+    seller_state,
+    total_items_sold,
+    total_orders,
+    ROUND(total_product_sales, 2) AS product_sales
+FROM marts.vw_seller_performance
+ORDER BY total_product_sales DESC
+LIMIT 10;
 
 -- TEST
 SELECT '=== Top Sellers By Revenue ===' AS info;
@@ -436,3 +551,41 @@ FROM marts.vw_delivery_performance
 WHERE is_late_delivery = TRUE
 ORDER BY delivery_delay_days DESC
 LIMIT 10;
+
+-- Cross-Mart Reconciliation
+-- Purpose
+-- We now want to verify that all four sales-related data marts report identical totals.
+SELECT '=== Cross Mart Reconciliation ===' AS info;
+SELECT
+    'Monthly Sales' AS mart,
+    SUM(total_items_sold) AS items,
+    ROUND(SUM(product_sales), 2) AS product_sales,
+    ROUND(SUM(freight_revenue), 2) AS freight_value
+FROM marts.vw_monthly_sales
+
+UNION ALL
+
+SELECT
+    'Product Performance',
+    SUM(total_items_sold),
+    ROUND(SUM(total_product_sales), 2),
+    ROUND(SUM(total_freight_value), 2)
+FROM marts.vw_product_performance
+
+UNION ALL
+
+SELECT
+    'Customer Summary',
+    SUM(total_items_purchased),
+    ROUND(SUM(total_product_sales), 2),
+    ROUND(SUM(total_freight_paid), 2)
+FROM marts.vw_customer_summary
+
+UNION ALL
+
+SELECT
+    'Seller Performance',
+    SUM(total_items_sold),
+    ROUND(SUM(total_product_sales), 2),
+    ROUND(SUM(total_freight_value), 2)
+FROM marts.vw_seller_performance;

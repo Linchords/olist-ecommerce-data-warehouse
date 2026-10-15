@@ -139,3 +139,41 @@ FROM marts.vw_seller_performance
 ORDER BY total_revenue DESC
 LIMIT 5;
 
+
+-- Cross-Mart Reconciliation
+-- Purpose
+-- We now want to verify that all four sales-related data marts report identical totals.
+SELECT '=== Cross Mart Reconciliation ===' AS info;
+SELECT
+    'Monthly Sales' AS mart,
+    SUM(total_items_sold) AS items,
+    ROUND(SUM(product_sales), 2) AS product_sales,
+    ROUND(SUM(freight_revenue), 2) AS freight_value
+FROM marts.vw_monthly_sales
+
+UNION ALL
+
+SELECT
+    'Product Performance',
+    SUM(total_items_sold),
+    ROUND(SUM(total_product_sales), 2),
+    ROUND(SUM(total_freight_value), 2)
+FROM marts.vw_product_performance
+
+UNION ALL
+
+SELECT
+    'Customer Summary',
+    SUM(total_items_purchased),
+    ROUND(SUM(total_product_sales), 2),
+    ROUND(SUM(total_freight_paid), 2)
+FROM marts.vw_customer_summary
+
+UNION ALL
+
+SELECT
+    'Seller Performance',
+    SUM(total_items_sold),
+    ROUND(SUM(total_product_sales), 2),
+    ROUND(SUM(total_freight_value), 2)
+FROM marts.vw_seller_performance;

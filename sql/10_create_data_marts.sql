@@ -542,7 +542,7 @@ FROM marts.vw_delivery_performance
 WHERE actual_delivery_days IS NOT NULL;
 
 -- Most Delayed Orders 
-SELECT '=== Most Delayed Orders ===' AS info;
+SELECT '=== The Most Delayed Orders ===' AS info;
 SELECT 
     order_id,
     actual_delivery_days,

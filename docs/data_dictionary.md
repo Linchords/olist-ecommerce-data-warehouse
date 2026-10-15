@@ -104,19 +104,39 @@ Grain: One row per payment transaction within an order.
 
 ## warehouse.fact_reviews
 
-Grain: One row per review.
+## warehouse.fact_reviews
 
-| Column                  | Type      | Description                                        |
-| ----------------------- | --------- | -------------------------------------------------- |
-| review_id               | VARCHAR   | Review identifier                                  |
-| order_id                | VARCHAR   | Related order identifier                           |
-| customer_key            | BIGINT    | Foreign key to dim_customer                        |
-| date_key                | INTEGER   | Foreign key to dim_date using review creation date |
-| review_score            | INTEGER   | Customer review score                              |
-| review_comment_title    | VARCHAR   | Review title                                       |
-| review_comment_message  | VARCHAR   | Review message                                     |
-| review_creation_date    | TIMESTAMP | Date review was created                            |
-| review_answer_timestamp | TIMESTAMP | Date review was answered                           |
+Grain: One row per source review record.
+
+| Column                  | Type      | Description                                             |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| review_key              | BIGINT    | Warehouse-generated surrogate primary key               |
+| review_id               | VARCHAR   | Original Olist review identifier; not guaranteed unique |
+| order_id                | VARCHAR   | Order associated with the review                        |
+| customer_key            | BIGINT    | Foreign key to dim_customer                             |
+| date_key                | INTEGER   | Foreign key to dim_date using review creation date      |
+| review_score            | INTEGER   | Customer review score (1–5)                             |
+| review_comment_title    | VARCHAR   | Review title                                            |
+| review_comment_message  | VARCHAR   | Customer review message                                 |
+| review_creation_date    | TIMESTAMP | Date the review was created                             |
+| review_answer_timestamp | TIMESTAMP | Date the review was answered                            |
+
+**Engineering Decision:**
+
+The original Olist dataset contains duplicate `review_id` values.
+
+Therefore, `review_id` cannot serve as the primary key.
+
+A warehouse generated `review_key` was introduced to uniquely
+identify each source review record while preserving the original
+review identifier for traceability.
+
+**Analytical Limitation:**
+
+Reviews are associated with orders rather than individual products.
+
+The product-seller review mart attributes an order's review to
+each distinct product-seller combination within that order.
 
 ---
 

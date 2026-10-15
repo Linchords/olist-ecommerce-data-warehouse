@@ -253,6 +253,20 @@ ORDER BY state_revenue DESC;
 
 SELECT '=== Creating Review Performance Mart ===' AS info;
 CREATE OR REPLACE VIEW marts.vw_review_performance AS 
+WITH unique_reviews AS (
+
+    SELECT DISTINCT 
+        fr.review_key,
+        fs.product_key,
+        fs.seller_key,
+        fr.review_score
+    
+    FROM warehouse.fact_reviews fr
+
+    INNER JOIN warehouse.fact_sales fs
+        ON fr.order_id = fs.order_id 
+)
+
 SELECT
     dp.product_key,
     dp.product_id,
@@ -263,28 +277,25 @@ SELECT
     ds.seller_city,
     ds.seller_state,
 
-    COUNT(DISTINCT fr.review_key) AS total_reviews,
+    COUNT(*) AS total_reviews,
 
-    AVG(fr.review_score) AS average_review_score,
+    AVG(ur.review_score) AS average_review_score,
 
-    COUNT(*) FILTER (
-        WHERE fr.review_score >= 4
+    COUNT(*) FILTER(
+        WHERE ur.review_score >= 4
     ) AS positive_reviews,
 
-    COUNT(*) FILTER (
-        WHERE fr.review_score <= 2
-    ) AS negative_reviews,
+    COUNT(*) FILTER(
+        WHERE ur.review_score <= 2
+    ) AS negative_reviews
 
-FROM warehouse.fact_reviews fr
+FROM unique_reviews ur 
 
-INNER JOIN warehouse.fact_sales fs 
-    ON fr.order_id = fs.order_id
+INNER JOIN warehouse.dim_product dp
+    ON ur.product_key = dp.product_key
 
-INNER JOIN warehouse.dim_product dp 
-    ON fs.product_key = dp.product_key
-
-INNER JOIN warehouse.dim_seller ds
-    ON fs.seller_key = ds.seller_key
+INNER JOIN warehouse.dim_seller ds 
+    ON ur.seller_key = ds.seller_key
 
 GROUP BY 
     dp.product_key,
@@ -294,6 +305,25 @@ GROUP BY
     ds.seller_id,
     ds.seller_city,
     ds.seller_state;
+
+
+-- Review Counts
+SELECT '=== Review Counts ===' AS info;
+SELECT 
+    COUNT(*) AS product_seller_combinations,
+    SUM(total_reviews) AS total_attributed_reviews,
+    SUM(positive_reviews) AS positive_reviews,
+    SUM(negative_reviews) AS negative_reviews
+FROM marts.vw_review_performance;
+
+
+-- Impossible Review Counts
+SELECT '=== Impossible Review Counts ===' AS info;
+SELECT *
+FROM marts.vw_review_performance
+WHERE positive_reviews + negative_reviews > total_reviews;
+
+
 
 -- Products with highest average score
 SELECT '=== Products With Highest Average Score ===' AS info;

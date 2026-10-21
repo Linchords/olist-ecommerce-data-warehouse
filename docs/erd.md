@@ -43,6 +43,8 @@ erDiagram
         INTEGER date_key FK
         DOUBLE price
         DOUBLE freight_value
+        VARCHAR order_status
+        TIMESTAMP shipping_limit_date
     }
 
     FACT_PAYMENTS {
@@ -65,7 +67,7 @@ erDiagram
         VARCHAR review_comment_title
         VARCHAR review_comment_message
         TIMESTAMP review_creation_date
-        TIMESTAMP review_answer timestamp
+        TIMESTAMP review_answer_timestamp
 
     }
 
@@ -74,6 +76,11 @@ erDiagram
         BIGINT customer_key FK
         INTEGER purchase_date_key FK
         VARCHAR order_status
+        TIMESTAMP order_purchase_timestamp
+        TIMESTAMP order_approved_at
+        TIMESTAMP order_delivered_carrier_date
+        TIMESTAMP order_delivered_customer_date
+        TIMESTAMP order_estimated_delivery_date
     }
 
 

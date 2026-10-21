@@ -104,8 +104,6 @@ Grain: One row per payment transaction within an order.
 
 ## warehouse.fact_reviews
 
-## warehouse.fact_reviews
-
 Grain: One row per source review record.
 
 | Column                  | Type      | Description                                             |

@@ -82,6 +82,8 @@ Download the **Brazilian E-Commerce Public Dataset by Olist** from Kaggle:
 
 https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
+`mkdir -p data/raw data/database`
+
 Extract the downloaded ZIP file and place the following nine CSV files inside `data/raw/`:
 
 - `olist_customers_dataset.csv`
@@ -447,9 +449,9 @@ https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
 ## Documentation
 
-Additional project documentation is available in the `docs/` directory:
+Explore the technical documentation:
 
-- `architecture.md` — pipeline architecture
-- `warehouse_model.md` — dimensional model design
-- `data_dictionary.md` — table and column definitions
-- `erd.md` — warehouse entity relationship diagram
+- [Data Pipeline Architecture](docs/architecture.md) — Overview of the data pipeline.
+- [Warehouse Model](docs/warehouse_model.md) — Dimensional model and engineering decisions.
+- [Data Dictionary](docs/data_dictionary.md) — Table definitions and column descriptions.
+- [Entity Relationship Diagram](docs/erd.md) — Visual representation of the warehouse relationships.

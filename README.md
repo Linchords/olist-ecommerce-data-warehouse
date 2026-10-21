@@ -82,7 +82,11 @@ Download the **Brazilian E-Commerce Public Dataset by Olist** from Kaggle:
 
 https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
-`mkdir -p data/raw data/database`
+Create the required directories if they do not already exist:
+
+```bash
+mkdir -p data/raw data/database
+```
 
 Extract the downloaded ZIP file and place the following nine CSV files inside `data/raw/`:
 
@@ -95,12 +99,6 @@ Extract the downloaded ZIP file and place the following nine CSV files inside `d
 - `olist_products_dataset.csv`
 - `olist_sellers_dataset.csv`
 - `product_category_name_translation.csv`
-
-Create the required directories if they do not already exist:
-
-```bash
-mkdir -p data/raw data/database
-```
 
 **Note:** Raw CSV files and DuckDB database files are excluded from Git version control through `.gitignore`.
 

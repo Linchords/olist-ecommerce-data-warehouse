@@ -10,11 +10,11 @@ INSERT INTO warehouse.dim_customer(
     customer_city,
     customer_state
 )
-SELECT 
+SELECT
     ROW_NUMBER() OVER(
         ORDER BY customer_id
     ) AS customer_key,
-    
+
     customer_id,
     customer_unique_id,
     customer_city,
@@ -24,7 +24,7 @@ FROM raw.customers;
 
 -- Verify Loads
 SELECT '=== Checking Total Counts For Dim Customer ===' AS info;
-SELECT 
+SELECT
     COUNT(*) AS total_rows_dim_customer
 FROM warehouse.dim_customer;
 
@@ -33,25 +33,25 @@ SELECT *
 FROM warehouse.dim_customer
 LIMIT 10;
 
--- Verify if dim_customer rows match with the total customer rows 
+-- Verify if dim_customer rows match with the total customer rows
 SELECT '=== Verifying total customers rows ===' AS info;
-SELECT 
+SELECT
     COUNT(*) AS total_rows_customers
 FROM raw.customers;
 
 
 -- Data Quality Check for Surrogate customer keys
 SELECT '=== Checking Duplicates For Customer Key ===' AS info;
-SELECT 
+SELECT
     customer_key,
     COUNT(*) AS unique_keys_total_counts
 FROM warehouse.dim_customer
 GROUP BY customer_key
 HAVING COUNT(*) > 1;
 
--- View Difference Between Olist Customer IDs 
+-- View Difference Between Olist Customer IDs
 SELECT '=== Checking Customer Order IDs Greater than 1 ===' AS info;
-SELECT 
+SELECT
     customer_unique_id,
     COUNT(DISTINCT customer_id) AS customer_id_count
 FROM warehouse.dim_customer
@@ -78,7 +78,7 @@ INSERT INTO warehouse.dim_product (
     product_height_cm,
     product_width_cm
 )
-SELECT 
+SELECT
     ROW_NUMBER() OVER(
         ORDER BY product_id
     ) AS product_key,
@@ -95,11 +95,11 @@ SELECT
     p.product_width_cm
 
 FROM raw.products p
-LEFT JOIN raw.product_category_translation pct 
+LEFT JOIN raw.product_category_translation pct
     ON p.product_category_name = pct.product_category_name;
 
 
--- Vefify product dimension table 
+-- Vefify product dimension table
 SELECT '=== Previewing Few Rows In Product Dimension === ' AS info;
 SELECT *
 FROM warehouse.dim_product
@@ -108,18 +108,18 @@ LIMIT 10;
 
 -- Compare Row counts dim_products & raw.products
 SELECT '=== Checking Raw Products Count ===' AS info;
-SELECT 
+SELECT
     COUNT(*) AS total_raw_products
 FROM raw.products;
 
 SELECT '=== Checking Warehouse Products Count ===' AS info;
-SELECT 
+SELECT
     COUNT(*) AS total_warehouse_products
 FROM warehouse.dim_product;
 
--- Checking Missing Product Category Name 
+-- Checking Missing Product Category Name
 SELECT '=== Checking Missing Product Category Name Count ===' AS info;
-SELECT 
+SELECT
     COUNT(*) AS product_category_without_translation
 FROM warehouse.dim_product
 WHERE product_category_name_english IS NULL;
@@ -132,7 +132,7 @@ SELECT
     product_category_name,
     product_category_name_english
 FROM warehouse.dim_product
-WHERE product_category_name_english IS NULL 
+WHERE product_category_name_english IS NULL
 LIMIT 10;
 
 
@@ -148,7 +148,7 @@ INSERT INTO warehouse.dim_seller (
     seller_city,
     seller_state
 )
-SELECT 
+SELECT
     ROW_NUMBER() OVER(
         ORDER BY seller_id
     ) AS seller_key,
@@ -166,21 +166,21 @@ FROM warehouse.dim_seller
 LIMIT 10;
 
 
--- Checking if table rows match 
+-- Checking if table rows match
 SELECT '=== Comparing Dim Sellers With Raw Sellers ===' AS info;
 SELECT
     COUNT(*) AS total_raw_sellers_count
 FROM raw.sellers;
 
-SELECT 
+SELECT
     COUNT(*) AS total_dim_seller_count
 FROM warehouse.dim_seller;
 
--- Checking Uniqueness 
+-- Checking Uniqueness
 SELECT '=== Checking Unique Values ===' AS info;
-SELECT 
+SELECT
     seller_key,
-    COUNT(*) 
+    COUNT(*)
 FROM warehouse.dim_seller
 GROUP BY seller_key
 HAVING COUNT(*) > 1;
@@ -202,11 +202,49 @@ INSERT INTO warehouse.dim_date (
     is_weekend
 )
 
-WITH date_range AS (
-    SELECT 
-        MIN(CAST(order_purchase_timestamp AS DATE)) AS min_date,
-        MAX(CAST(order_purchase_timestamp AS DATE)) AS max_date
+WITH source_dates AS (
+    SELECT CAST(order_purchase_timestamp AS DATE) AS event_date
     FROM raw.orders
+
+    UNION ALL
+
+    SELECT CAST(order_approved_at AS DATE)
+    FROM raw.orders
+
+    UNION ALL
+
+    SELECT CAST(order_delivered_carrier_date AS DATE)
+    FROM raw.orders
+
+    UNION ALL
+
+    SELECT CAST(order_delivered_customer_date AS DATE)
+    FROM raw.orders
+
+    UNION ALL
+
+    SELECT CAST(order_estimated_delivery_date AS DATE)
+    FROM raw.orders
+
+    UNION ALL
+
+    SELECT CAST(review_creation_date AS DATE)
+    FROM raw.order_reviews
+
+    UNION ALL
+
+    SELECT CAST(review_answer_timestamp AS DATE)
+    FROM raw.order_reviews
+
+),
+
+
+date_range AS (
+    SELECT
+        MIN(event_date) AS min_date,
+        MAX(event_date) AS max_date
+    FROM source_dates
+
 ),
 
 calendar AS (
@@ -227,7 +265,7 @@ SELECT
     ) AS date_key,
 
     full_date,
-    
+
     EXTRACT(YEAR FROM full_date) AS year,
 
     EXTRACT(QUARTER FROM full_date) AS quarter,
@@ -243,7 +281,7 @@ SELECT
     CASE
         WHEN STRFTIME(full_date, '%A') IN ('Saturday', 'Sunday')
         THEN TRUE
-        ELSE FALSE 
+        ELSE FALSE
     END AS is_weekend
 
 FROM calendar;
@@ -257,13 +295,13 @@ LIMIT 10;
 
 -- CHECK THE RANGE
 SELECT '=== Checking first day, last day, and total rows in dim date table ===' AS info;
-SELECT 
+SELECT
     MIN(full_date) AS first_date,
     MAX(full_date) AS last_date,
     COUNT(*) AS number_of_days
-FROM warehouse.dim_date; 
+FROM warehouse.dim_date;
 
--- CHECK WEEKENDS 
+-- CHECK WEEKENDS
 SELECT '=== Checking Weekends Days ===' AS info;
 SELECT *
 FROM warehouse.dim_date

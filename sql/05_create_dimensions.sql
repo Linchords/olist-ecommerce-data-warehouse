@@ -4,7 +4,7 @@
 -- =========================================================
 
 
-DROP TABLE warehouse.dim_customer;
+DROP TABLE IF EXISTS warehouse.dim_customer;
 
 SELECT '=== Creating Dim Customer Table ===' AS info;
 CREATE TABLE warehouse.dim_customer (
@@ -76,3 +76,9 @@ CREATE TABLE warehouse.dim_date (
     day_name        VARCHAR,
     is_weekend      BOOLEAN
 );
+
+
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'warehouse'
+ORDER BY table_name;

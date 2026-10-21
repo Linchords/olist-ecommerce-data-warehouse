@@ -56,11 +56,17 @@ erDiagram
     }
 
     FACT_REVIEWS {
-        VARCHAR review_id PK
+        BIGINT review_key PK
+        VARCHAR review_id
         VARCHAR order_id
         BIGINT customer_key FK
         INTEGER date_key FK
         INTEGER review_score
+        VARCHAR review_comment_title
+        VARCHAR review_comment_message
+        TIMESTAMP review_creation_date
+        TIMESTAMP review_answer timestamp
+
     }
 
     FACT_DELIVERY {

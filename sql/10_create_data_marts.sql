@@ -24,10 +24,30 @@ FROM warehouse.fact_sales fs
 
 INNER JOIN warehouse.dim_date d
     ON fs.date_key = d.date_key
+
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     d.year,
     d.month,
     d.month_name;
+
+
+--TESR 
+SELECT 
+    SUM(total_orders) AS delivered_orders,
+    SUM(total_items_sold) AS delivered_items,
+
+
+    ROUND(
+        SUM(product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(freight_revenue), 2
+    ) AS delivered_freight_value
+
+FROM marts.vw_monthly_sales;
 
 
 -- TEST 
@@ -78,11 +98,40 @@ FROM warehouse.fact_sales fs
 INNER JOIN warehouse.dim_product dp 
     ON fs.product_key = dp.product_key
 
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     dp.product_key,
     dp.product_id,
     dp.product_category_name,
     dp.product_category_name_english;
+
+
+-- TEST 
+SELECT 
+    SUM(total_items_sold) AS delivered_items,
+
+    ROUND(
+        SUM(total_product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(total_freight_value), 2
+    ) AS delivered_freight_value
+
+FROM marts.vw_product_performance;
+
+-- PRODUCT RANKINGS
+SELECT '=== Product Rankings ===' AS info;
+SELECT 
+    product_id,
+    product_category_name_english,
+    total_items_sold,
+    total_product_sales
+FROM marts.vw_product_performance
+ORDER BY total_product_sales DESC
+LIMIT 10;
+
 
 -- Top Products by Sales
 SELECT '=== Testing Product Performance Mart ===' AS info;
@@ -131,6 +180,8 @@ FROM warehouse.fact_sales fs
 INNER JOIN warehouse.dim_customer dc
     ON fs.customer_key = dc.customer_key
 
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     dc.customer_unique_id,
     fs.order_id
@@ -154,6 +205,38 @@ SELECT
 FROM order_totals
 GROUP BY customer_unique_id;
 
+
+-- Customer Spendings
+SELECT '=== Customer Spending ===' AS info;
+SELECT
+    SUM(total_orders) AS delivered_orders,
+
+    SUM(total_items_purchased) AS delivered_items,
+
+    ROUND(
+        SUM(total_product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(total_freight_paid), 2
+    ) AS delivered_freight_value,
+
+    ROUND(
+        SUM(total_spent), 2
+    ) AS total_customer_spending
+
+FROM marts.vw_customer_summary;
+
+-- Highest Value Customer
+SELECT '=== Highest Value Customer ===' AS info;
+SELECT
+    customer_unique_id,
+    total_orders,
+    total_items_purchased,
+    ROUND(total_spent, 2) AS total_spent
+FROM marts.vw_customer_summary
+ORDER BY total_spent DESC
+LIMIT 10;
 
 -- Test Customer Mart
 SELECT '=== Testing Customer Summary Mart ===' AS info;
@@ -216,11 +299,43 @@ FROM warehouse.fact_sales fs
 INNER JOIN warehouse.dim_seller ds 
     ON fs.seller_key = ds.seller_key
 
+WHERE fs.order_status = 'delivered'
+
 GROUP BY 
     ds.seller_key,
     ds.seller_id,
     ds.seller_city,
     ds.seller_state;
+
+
+-- Validate Seller Mart
+SELECT '=== Validate Seller Marts ===' AS info;
+SELECT
+    SUM(total_items_sold) AS delivered_items,
+
+    ROUND(
+        SUM(total_product_sales), 2
+    ) AS delivered_product_sales,
+
+    ROUND(
+        SUM(total_freight_value), 2
+    ) AS delivered_freight_value
+
+FROM marts.vw_seller_performance;
+
+
+-- Top Performing Sellers 
+SELECT '=== Top performing sellers ===' AS info;
+SELECT
+    seller_id,
+    seller_city,
+    seller_state,
+    total_items_sold,
+    total_orders,
+    ROUND(total_product_sales, 2) AS product_sales
+FROM marts.vw_seller_performance
+ORDER BY total_product_sales DESC
+LIMIT 10;
 
 -- TEST
 SELECT '=== Top Sellers By Revenue ===' AS info;
@@ -253,6 +368,20 @@ ORDER BY state_revenue DESC;
 
 SELECT '=== Creating Review Performance Mart ===' AS info;
 CREATE OR REPLACE VIEW marts.vw_review_performance AS 
+WITH unique_reviews AS (
+
+    SELECT DISTINCT 
+        fr.review_key,
+        fs.product_key,
+        fs.seller_key,
+        fr.review_score
+    
+    FROM warehouse.fact_reviews fr
+
+    INNER JOIN warehouse.fact_sales fs
+        ON fr.order_id = fs.order_id 
+)
+
 SELECT
     dp.product_key,
     dp.product_id,
@@ -263,28 +392,25 @@ SELECT
     ds.seller_city,
     ds.seller_state,
 
-    COUNT(DISTINCT fr.review_key) AS total_reviews,
+    COUNT(*) AS total_reviews,
 
-    AVG(fr.review_score) AS average_review_score,
+    AVG(ur.review_score) AS average_review_score,
 
-    COUNT(*) FILTER (
-        WHERE fr.review_score >= 4
+    COUNT(*) FILTER(
+        WHERE ur.review_score >= 4
     ) AS positive_reviews,
 
-    COUNT(*) FILTER (
-        WHERE fr.review_score <= 2
-    ) AS negative_reviews,
+    COUNT(*) FILTER(
+        WHERE ur.review_score <= 2
+    ) AS negative_reviews
 
-FROM warehouse.fact_reviews fr
+FROM unique_reviews ur 
 
-INNER JOIN warehouse.fact_sales fs 
-    ON fr.order_id = fs.order_id
+INNER JOIN warehouse.dim_product dp
+    ON ur.product_key = dp.product_key
 
-INNER JOIN warehouse.dim_product dp 
-    ON fs.product_key = dp.product_key
-
-INNER JOIN warehouse.dim_seller ds
-    ON fs.seller_key = ds.seller_key
+INNER JOIN warehouse.dim_seller ds 
+    ON ur.seller_key = ds.seller_key
 
 GROUP BY 
     dp.product_key,
@@ -294,6 +420,25 @@ GROUP BY
     ds.seller_id,
     ds.seller_city,
     ds.seller_state;
+
+
+-- Review Counts
+SELECT '=== Review Counts ===' AS info;
+SELECT 
+    COUNT(*) AS product_seller_combinations,
+    SUM(total_reviews) AS total_attributed_reviews,
+    SUM(positive_reviews) AS positive_reviews,
+    SUM(negative_reviews) AS negative_reviews
+FROM marts.vw_review_performance;
+
+
+-- Impossible Review Counts
+SELECT '=== Impossible Review Counts ===' AS info;
+SELECT *
+FROM marts.vw_review_performance
+WHERE positive_reviews + negative_reviews > total_reviews;
+
+
 
 -- Products with highest average score
 SELECT '=== Products With Highest Average Score ===' AS info;
@@ -397,7 +542,7 @@ FROM marts.vw_delivery_performance
 WHERE actual_delivery_days IS NOT NULL;
 
 -- Most Delayed Orders 
-SELECT '=== Most Delayed Orders ===' AS info;
+SELECT '=== The Most Delayed Orders ===' AS info;
 SELECT 
     order_id,
     actual_delivery_days,

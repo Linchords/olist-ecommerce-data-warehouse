@@ -144,40 +144,83 @@ LIMIT 5;
 -- Purpose
 -- We now want to verify that all four sales-related data marts report identical totals.
 SELECT '=== Cross Mart Reconciliation ===' AS info;
+WITH baseline AS (
+    SELECT
+        COUNT(*) AS items,
+
+        CAST(
+            ROUND(SUM(oi.price), 2)
+            AS DECIMAL(18,2)
+        ) AS product_sales,
+
+        CAST(
+            ROUND(SUM(oi.freight_value), 2)
+            AS DECIMAL(18,2)
+        ) AS freight_value
+
+    FROM raw.order_items oi
+
+    INNER JOIN raw.orders o
+        ON oi.order_id = o.order_id
+
+    WHERE o.order_status = 'delivered'
+),
+
+mart_totals AS (
+
+    SELECT
+        'Monthly Sales' AS mart,
+        SUM(total_items_sold) AS items,
+        CAST(ROUND(SUM(product_sales), 2) AS DECIMAL(18,2)) AS product_sales,
+        CAST(ROUND(SUM(freight_revenue), 2) AS DECIMAL(18,2)) AS freight_value
+    FROM marts.vw_monthly_sales
+
+    UNION ALL
+
+    SELECT
+        'Product Performance',
+        SUM(total_items_sold),
+        CAST(ROUND(SUM(total_product_sales), 2) AS DECIMAL(18,2)),
+        CAST(ROUND(SUM(total_freight_value), 2) AS DECIMAL(18,2))
+    FROM marts.vw_product_performance
+
+    UNION ALL
+
+    SELECT
+        'Customer Summary',
+        SUM(total_items_purchased),
+        CAST(ROUND(SUM(total_product_sales), 2) AS DECIMAL(18,2)),
+        CAST(ROUND(SUM(total_freight_paid), 2) AS DECIMAL(18,2))
+    FROM marts.vw_customer_summary
+
+    UNION ALL
+
+    SELECT
+        'Seller Performance',
+        SUM(total_items_sold),
+        CAST(ROUND(SUM(total_product_sales), 2) AS DECIMAL(18,2)),
+        CAST(ROUND(SUM(total_freight_value), 2) AS DECIMAL(18,2))
+    FROM marts.vw_seller_performance
+)
+
 SELECT
-    'Monthly Sales' AS mart,
-    SUM(total_items_sold) AS items,
-    ROUND(SUM(product_sales), 2) AS product_sales,
-    ROUND(SUM(freight_revenue), 2) AS freight_value
-FROM marts.vw_monthly_sales
+    m.mart,
+    m.items,
+    m.product_sales,
+    m.freight_value,
 
-UNION ALL
+    CASE
+        WHEN m.items = b.items
+            AND m.product_sales = b.product_sales
+            AND m.freight_value = b.freight_value
+        THEN 'PASS'
+        ELSE 'FAIL'
+    END AS reconciliation_status
 
-SELECT
-    'Product Performance',
-    SUM(total_items_sold),
-    ROUND(SUM(total_product_sales), 2),
-    ROUND(SUM(total_freight_value), 2)
-FROM marts.vw_product_performance
+FROM mart_totals m
+CROSS JOIN baseline b
 
-UNION ALL
-
-SELECT
-    'Customer Summary',
-    SUM(total_items_purchased),
-    ROUND(SUM(total_product_sales), 2),
-    ROUND(SUM(total_freight_paid), 2)
-FROM marts.vw_customer_summary
-
-UNION ALL
-
-SELECT
-    'Seller Performance',
-    SUM(total_items_sold),
-    ROUND(SUM(total_product_sales), 2),
-    ROUND(SUM(total_freight_value), 2)
-FROM marts.vw_seller_performance;
-
+ORDER BY m.mart;
 
 
 -- Date Coverage Validation
